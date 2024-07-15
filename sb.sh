@@ -32,37 +32,51 @@ show_system_info() {
 }
 
 # 安装 sing-box
-install_singbox() {
-    echo "开始安装 sing-box..."
+    install_singbox() {
+        echo "开始安装 sing-box..."
 
-    # 设置版本号
-    VERSION="1.9.3"
+        # 设置版本号
+        LATEST_RELEASE=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep "tag_name" | cut -d '"' -f 4)
     
+    if [ -z "$LATEST_RELEASE" ]; then
+        echo "无法自动获取最新版本号，请手动输入版本号。"
+        read -p "请输入您想要安装的版本号（例如：1.9.3）: " VERSION
+    else
+        VERSION=${LATEST_RELEASE#v}  # 去掉版本号前的 'v'
+        # 提示用户确认版本
+        echo "检测到最新版本为: $LATEST_RELEASE"
+        read -p "是否使用该版本？[Y/n] " use_latest
+
+        if [[ "$use_latest" == "n" || "$use_latest" == "N" ]]; then
+            read -p "请输入您想要安装的版本号（例如：1.9.3）: " VERSION
+        fi
+    fi
+
     # 获取操作系统和架构信息
     OS=$(uname | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
-    
-    # 根据架构信息调整下载文件名
-    case $ARCH in
-        x86_64)
-            ARCH="amd64"
-            ;;
-        aarch64)
-            ARCH="arm64"
-            ;;
-        armv7l)
-            ARCH="armv7"
-            ;;
-        *)
-            echo "不支持的架构: $ARCH"
-            exit 1
-            ;;
-    esac
-    
-    # 拼接下载地址
-    DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box-${VERSION}-${OS}-${ARCH}.tar.gz"
-    
-    echo "下载 sing-box..."
+        ARCH=$(uname -m)
+        
+        # 根据架构信息调整下载文件名
+        case $ARCH in
+            x86_64)
+                ARCH="amd64"
+                ;;
+            aarch64)
+                ARCH="arm64"
+                ;;
+            armv7l)
+                ARCH="armv7"
+                ;;
+            *)
+                echo "不支持的架构: $ARCH"
+                exit 1
+                ;;
+        esac
+        
+        # 拼接下载地址
+        DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box-${VERSION}-${OS}-${ARCH}.tar.gz"
+        
+        echo "下载 sing-box..."
     # 下载文件
     wget $DOWNLOAD_URL -O sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
