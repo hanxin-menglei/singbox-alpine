@@ -190,12 +190,6 @@ stop() {
     start-stop-daemon --stop --pidfile \$pidfile
     eend \$?
 }
-
-reload() {
-    ebegin "Reloading \$name"
-    start-stop-daemon --signal HUP --pidfile \$pidfile
-    eend $?
-}
 EOF
     else
         echo "/etc/init.d 目录不存在"
@@ -221,7 +215,7 @@ EOF
     if [ -d /etc/logrotate.d ]; then
         cat <<EOF > /etc/logrotate.d/sing-box
 /var/log/sing-box/*.log {
-    daily
+    size 1M
     rotate 7
     compress
     delaycompress
@@ -229,9 +223,6 @@ EOF
     notifempty
     create 0644 root root
     sharedscripts
-    postrotate
-        /etc/init.d/sing-box reload > /dev/null
-    endscript
 }
 EOF
     else
