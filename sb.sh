@@ -8,13 +8,13 @@ apk add wget logrotate
 # 获取系统信息
 get_system_info() {
     HOSTNAME=$(hostname)
-    OS=$(uname -o)
+    OS=$(uname -s)
     KERNEL=$(uname -r)
-    UPTIME=$(uptime -p)
+    UPTIME=$(uptime)
     DATE=$(date)
-    MEMORY=$(free -m | awk '/Mem:/ {print \$3 "MB / " \$2 "MB"}')
-    CPU=$(grep 'model name' /proc/cpuinfo | uniq | awk -F: '{print \$2}')
-    DISK=$(df -h / | awk '/\// {print \$3 " / " \$2}')
+    MEMORY=$(free -m | awk '/Mem:/ {print $3 "MB / " $2 "MB"}')
+    CPU=$(grep 'model name' /proc/cpuinfo | uniq | awk -F: '{print $2}')
+    DISK=$(df -h / | awk '/\// {print $3 " / " $2}')
 }
 
 # 显示系统信息
@@ -76,11 +76,25 @@ install_singbox() {
     # 解压下载的文件
     tar -zxvf sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
+    # 检查解压后的目录是否存在
+    if [ -d "sing-box-${VERSION}-${OS}-${ARCH}" ]; then
+        cd "sing-box-${VERSION}-${OS}-${ARCH}"
+    fi
+    
     echo "移动 sing-box 文件..."
     # 移动解压出的sing-box文件到/usr/local/bin
-    mv sing-box /usr/local/bin/
+    if [ -f sing-box ]; then
+        mv sing-box /usr/local/bin/
+    else
+        echo "解压后的sing-box文件不存在"
+        exit 1
+    fi
+    
+    # 返回上级目录
+    cd ..
     
     # 清理下载的tar.gz文件
+    rm -rf "sing-box-${VERSION}-${OS}-${ARCH}"
     rm sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
     echo "创建配置文件目录..."
@@ -93,7 +107,12 @@ install_singbox() {
     
     echo "生成 UUID..."
     # 生成UUID
-    UUID=$(/usr/local/bin/sing-box generate uuid)
+    if [ -x /usr/local/bin/sing-box ]; then
+        UUID=$(/usr/local/bin/sing-box generate uuid)
+    else
+        echo "/usr/local/bin/sing-box 不存在或不可执行"
+        exit 1
+    fi
     
     echo "创建配置文件..."
     # 创建 config.json 文件
@@ -135,7 +154,8 @@ EOF
     
     echo "创建 OpenRC 服务脚本..."
     # 创建 OpenRC 服务脚本
-    cat <<EOF > /etc/init.d/sing-box
+    if [ -d /etc/init.d ]; then
+        cat <<EOF > /etc/init.d/sing-box
 #!/sbin/openrc-run
 
 name="sing-box"
@@ -171,10 +191,19 @@ stop() {
     eend \$?
 }
 EOF
+    else
+        echo "/etc/init.d 目录不存在"
+        exit 1
+    fi
     
     echo "赋予服务脚本执行权限..."
     # 赋予服务脚本执行权限
-    chmod +x /etc/init.d/sing-box
+    if [ -f /etc/init.d/sing-box ]; then
+        chmod +x /etc/init.d/sing-box
+    else
+        echo "/etc/init.d/sing-box 文件不存在"
+        exit 1
+    fi
     
     echo "添加并启动 sing-box 服务..."
     # 添加服务到 OpenRC 并启动服务
@@ -183,7 +212,8 @@ EOF
     
     echo "创建 logrotate 配置文件..."
     # 创建 logrotate 配置文件
-    cat <<EOF > /etc/logrotate.d/sing-box
+    if [ -d /etc/logrotate.d ]; then
+        cat <<EOF > /etc/logrotate.d/sing-box
 /var/log/sing-box/*.log {
     daily
     rotate 7
@@ -198,10 +228,19 @@ EOF
     endscript
 }
 EOF
+    else
+        echo "/etc/logrotate.d 目录不存在"
+        exit 1
+    fi
     
     echo "手动运行 logrotate 以确保配置正确..."
     # 手动运行 logrotate 以确保配置正确
-    logrotate -f /etc/logrotate.d/sing-box
+    if command -v logrotate > /dev/null 2>&1; then
+        logrotate -f /etc/logrotate.d/sing-box
+    else
+        echo "logrotate 命令不存在"
+        exit 1
+    fi
     
     echo "sing-box 安装和配置完成！UUID: $UUID"
 }
