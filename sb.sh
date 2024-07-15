@@ -1,8 +1,9 @@
 #!/bin/sh
 
 # 安装必要工具
+echo "更新软件包列表并安装必要工具..."
 apk update
-apk add wget
+apk add wget logrotate
 
 # 获取系统信息
 get_system_info() {
@@ -32,6 +33,8 @@ show_system_info() {
 
 # 安装 sing-box
 install_singbox() {
+    echo "开始安装 sing-box..."
+
     # 设置版本号
     VERSION="1.9.3"
     
@@ -59,6 +62,7 @@ install_singbox() {
     # 拼接下载地址
     DOWNLOAD_URL="https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box-${VERSION}-${OS}-${ARCH}.tar.gz"
     
+    echo "下载 sing-box..."
     # 下载文件
     wget $DOWNLOAD_URL -O sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
@@ -68,26 +72,31 @@ install_singbox() {
         exit 1
     fi
     
+    echo "解压 sing-box..."
     # 解压下载的文件
     tar -zxvf sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
+    echo "移动 sing-box 文件..."
     # 移动解压出的sing-box文件到/usr/local/bin
     mv sing-box /usr/local/bin/
     
     # 清理下载的tar.gz文件
     rm sing-box-${VERSION}-${OS}-${ARCH}.tar.gz
     
+    echo "创建配置文件目录..."
     # 创建配置文件目录
     mkdir -p /usr/local/etc/sing-box
     
     # 让用户输入listen_port和Host
     read -p "请输入监听端口 (listen_port): " LISTEN_PORT
-    read -p "请输入Host: " HOST
+    read -p "请输入 Host: " HOST
     
+    echo "生成 UUID..."
     # 生成UUID
     UUID=$(/usr/local/bin/sing-box generate uuid)
     
-    # 创建config.json文件
+    echo "创建配置文件..."
+    # 创建 config.json 文件
     cat <<EOF > /usr/local/etc/sing-box/config.json
 {
     "inbounds": [
@@ -120,9 +129,11 @@ install_singbox() {
 }
 EOF
     
+    echo "创建日志目录..."
     # 创建日志目录
     mkdir -p /var/log/sing-box
     
+    echo "创建 OpenRC 服务脚本..."
     # 创建 OpenRC 服务脚本
     cat <<EOF > /etc/init.d/sing-box
 #!/sbin/openrc-run
@@ -161,18 +172,21 @@ stop() {
 }
 EOF
     
+    echo "赋予服务脚本执行权限..."
     # 赋予服务脚本执行权限
     chmod +x /etc/init.d/sing-box
     
+    echo "添加并启动 sing-box 服务..."
     # 添加服务到 OpenRC 并启动服务
     rc-update add sing-box default
     rc-service sing-box start
     
+    echo "创建 logrotate 配置文件..."
     # 创建 logrotate 配置文件
     cat <<EOF > /etc/logrotate.d/sing-box
 /var/log/sing-box/*.log {
-    size 1M
-    rotate 5
+    daily
+    rotate 7
     compress
     delaycompress
     missingok
@@ -180,11 +194,12 @@ EOF
     create 0644 root root
     sharedscripts
     postrotate
-        /etc/init.d/sing-box restart > /dev/null
+        /etc/init.d/sing-box reload > /dev/null
     endscript
 }
 EOF
     
+    echo "手动运行 logrotate 以确保配置正确..."
     # 手动运行 logrotate 以确保配置正确
     logrotate -f /etc/logrotate.d/sing-box
     
@@ -193,11 +208,15 @@ EOF
 
 # 卸载 sing-box
 uninstall_singbox() {
+    echo "开始卸载 sing-box..."
+    
     # 停止并删除服务
+    echo "停止并删除 sing-box 服务..."
     rc-service sing-box stop
     rc-update del sing-box
     
     # 删除文件和目录
+    echo "删除文件和目录..."
     rm -f /usr/local/bin/sing-box
     rm -rf /usr/local/etc/sing-box
     rm -rf /var/log/sing-box
