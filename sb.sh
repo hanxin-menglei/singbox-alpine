@@ -190,6 +190,11 @@ stop() {
     start-stop-daemon --stop --pidfile \$pidfile
     eend \$?
 }
+reload() {
+    ebegin "Reloading \$name"
+    start-stop-daemon --signal HUP --pidfile \$pidfile
+    eend $?
+}
 EOF
     else
         echo "/etc/init.d 目录不存在"
