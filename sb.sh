@@ -190,6 +190,7 @@ stop() {
     start-stop-daemon --stop --pidfile \$pidfile
     eend \$?
 }
+
 reload() {
     ebegin "Reloading \$name"
     start-stop-daemon --signal HUP --pidfile \$pidfile
