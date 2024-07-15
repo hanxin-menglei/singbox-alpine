@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# 安装 dialog 工具
+# 安装必要工具
 apk update
-apk add dialog
+apk add wget
 
 # 获取系统信息
 get_system_info() {
@@ -19,7 +19,15 @@ get_system_info() {
 # 显示系统信息
 show_system_info() {
     get_system_info
-    dialog --title "系统信息" --msgbox "主机名: $HOSTNAME\n操作系统: $OS\n内核版本: $KERNEL\n运行时间: $UPTIME\n当前时间: $DATE\n内存使用: $MEMORY\nCPU: $CPU\n硬盘使用: $DISK" 15 50
+    echo "系统信息:"
+    echo "主机名: $HOSTNAME"
+    echo "操作系统: $OS"
+    echo "内核版本: $KERNEL"
+    echo "运行时间: $UPTIME"
+    echo "当前时间: $DATE"
+    echo "内存使用: $MEMORY"
+    echo "CPU: $CPU"
+    echo "硬盘使用: $DISK"
 }
 
 # 安装 sing-box
@@ -43,7 +51,7 @@ install_singbox() {
             ARCH="armv7"
             ;;
         *)
-            dialog --msgbox "不支持的架构: $ARCH" 10 30
+            echo "不支持的架构: $ARCH"
             exit 1
             ;;
     esac
@@ -56,7 +64,7 @@ install_singbox() {
     
     # 检查下载是否成功
     if [ $? -ne 0 ]; then
-        dialog --msgbox "下载失败: $DOWNLOAD_URL" 10 30
+        echo "下载失败: $DOWNLOAD_URL"
         exit 1
     fi
     
@@ -73,8 +81,8 @@ install_singbox() {
     mkdir -p /usr/local/etc/sing-box
     
     # 让用户输入listen_port和Host
-    LISTEN_PORT=$(dialog --inputbox "请输入监听端口 (listen_port):" 10 30 3>&1 1>&2 2>&3 3>&-)
-    HOST=$(dialog --inputbox "请输入Host:" 10 30 3>&1 1>&2 2>&3 3>&-)
+    read -p "请输入监听端口 (listen_port): " LISTEN_PORT
+    read -p "请输入Host: " HOST
     
     # 生成UUID
     UUID=$(/usr/local/bin/sing-box generate uuid)
@@ -180,7 +188,7 @@ EOF
     # 手动运行 logrotate 以确保配置正确
     logrotate -f /etc/logrotate.d/sing-box
     
-    dialog --msgbox "sing-box 安装和配置完成！UUID: $UUID" 10 50
+    echo "sing-box 安装和配置完成！UUID: $UUID"
 }
 
 # 卸载 sing-box
@@ -196,18 +204,17 @@ uninstall_singbox() {
     rm -f /etc/init.d/sing-box
     rm -f /etc/logrotate.d/sing-box
     
-    dialog --msgbox "sing-box 卸载完成！" 10 30
+    echo "sing-box 卸载完成！"
 }
 
 # 主菜单
 while true; do
-    CHOICE=$(dialog --clear --title "sing-box 安装程序" \
-        --menu "请选择一个操作:" 15 50 4 \
-        1 "安装 sing-box (vmess + ws)" \
-        2 "卸载 sing-box" \
-        3 "查看系统信息" \
-        4 "退出" \
-        3>&1 1>&2 2>&3 3>&-)
+    echo "sing-box 安装程序"
+    echo "1. 安装 sing-box (vmess + ws)"
+    echo "2. 卸载 sing-box"
+    echo "3. 查看系统信息"
+    echo "4. 退出"
+    read -p "请选择一个操作: " CHOICE
     
     case $CHOICE in
         1)
@@ -223,7 +230,7 @@ while true; do
             break
             ;;
         *)
-            dialog --msgbox "无效的选择，请重试。" 10 30
+            echo "无效的选择，请重试。"
             ;;
     esac
 done
