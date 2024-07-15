@@ -81,77 +81,77 @@ install_singbox() {
     
     # 创建config.json文件
     cat <<EOF > /usr/local/etc/sing-box/config.json
-    {
-        "inbounds": [
-            {
-                "type": "vmess",
-                "listen": "::",
-                "listen_port": $LISTEN_PORT,
-                "tag":"vmess-sb",
-                "users": [
-                    {
-                        "uuid": "$UUID",
-                        "alterId": 0
-                    }
-                ],
-                "transport": {
-                    "type": "ws",
-                    "path": "/",
-                    "headers": {
-                        "Host": "$HOST"
-                    },
-                    "max_early_data": 2048
+{
+    "inbounds": [
+        {
+            "type": "vmess",
+            "listen": "::",
+            "listen_port": $LISTEN_PORT,
+            "tag":"vmess-sb",
+            "users": [
+                {
+                    "uuid": "$UUID",
+                    "alterId": 0
                 }
+            ],
+            "transport": {
+                "type": "ws",
+                "path": "/",
+                "headers": {
+                    "Host": "$HOST"
+                },
+                "max_early_data": 2048
             }
-        ],
-        "outbounds": [
-            {
-                "type": "direct"
-            }
-        ]
-    }
-    EOF
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "direct"
+        }
+    ]
+}
+EOF
     
     # 创建日志目录
     mkdir -p /var/log/sing-box
     
     # 创建 OpenRC 服务脚本
     cat <<EOF > /etc/init.d/sing-box
-    #!/sbin/openrc-run
-    
-    name="sing-box"
-    description="sing-box service"
-    command="/usr/local/bin/sing-box"
-    command_args="run -c /usr/local/etc/sing-box/config.json"
-    pidfile="/run/sing-box.pid"
-    command_background="yes"
-    output_log="/var/log/sing-box/sing-box.log"
-    error_log="/var/log/sing-box/sing-box.err.log"
-    
-    depend() {
-        need net
-        use dns logger
-        after firewall
-    }
-    
-    start_pre() {
-        checkpath -d -m 0755 /run/sing-box
-        checkpath -f -m 0644 -o root:root \$output_log
-        checkpath -f -m 0644 -o root:root \$error_log
-    }
-    
-    start() {
-        ebegin "Starting \$name"
-        start-stop-daemon --start --exec \$command -- \$command_args >> \$output_log 2>> \$error_log &
-        eend \$?
-    }
-    
-    stop() {
-        ebegin "Stopping \$name"
-        start-stop-daemon --stop --pidfile \$pidfile
-        eend \$?
-    }
-    EOF
+#!/sbin/openrc-run
+
+name="sing-box"
+description="sing-box service"
+command="/usr/local/bin/sing-box"
+command_args="run -c /usr/local/etc/sing-box/config.json"
+pidfile="/run/sing-box.pid"
+command_background="yes"
+output_log="/var/log/sing-box/sing-box.log"
+error_log="/var/log/sing-box/sing-box.err.log"
+
+depend() {
+    need net
+    use dns logger
+    after firewall
+}
+
+start_pre() {
+    checkpath -d -m 0755 /run/sing-box
+    checkpath -f -m 0644 -o root:root \$output_log
+    checkpath -f -m 0644 -o root:root \$error_log
+}
+
+start() {
+    ebegin "Starting \$name"
+    start-stop-daemon --start --exec \$command -- \$command_args >> \$output_log 2>> \$error_log &
+    eend \$?
+}
+
+stop() {
+    ebegin "Stopping \$name"
+    start-stop-daemon --stop --pidfile \$pidfile
+    eend \$?
+}
+EOF
     
     # 赋予服务脚本执行权限
     chmod +x /etc/init.d/sing-box
@@ -162,20 +162,20 @@ install_singbox() {
     
     # 创建 logrotate 配置文件
     cat <<EOF > /etc/logrotate.d/sing-box
-    /var/log/sing-box/*.log {
-        size 1M
-        rotate 5
-        compress
-        delaycompress
-        missingok
-        notifempty
-        create 0644 root root
-        sharedscripts
-        postrotate
-            /etc/init.d/sing-box restart > /dev/null
-        endscript
-    }
-    EOF
+/var/log/sing-box/*.log {
+    size 1M
+    rotate 5
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    sharedscripts
+    postrotate
+        /etc/init.d/sing-box restart > /dev/null
+    endscript
+}
+EOF
     
     # 手动运行 logrotate 以确保配置正确
     logrotate -f /etc/logrotate.d/sing-box
