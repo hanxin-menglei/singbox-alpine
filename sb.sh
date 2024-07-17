@@ -150,7 +150,7 @@ while true; do
                     wget https://raw.githubusercontent.com/hanxin-menglei/singbox-alpine/main/config_vmess_ws.sh -O config_vmess_ws.sh && chmod +x config_vmess_ws.sh && ./config_vmess_ws.sh
                     ;;
                 2)
-                    /path/to/config_shadowsocks.sh
+                    wget https://raw.githubusercontent.com/hanxin-menglei/singbox-alpine/main/config_shadowsocks.sh -O config_shadowsocks.sh && chmod +x config_shadowsocks.sh && ./config_shadowsocks.sh
                     ;;
                 3)
                     /path/to/config_vless_reality.sh
