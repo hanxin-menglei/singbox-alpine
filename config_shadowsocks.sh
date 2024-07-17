@@ -9,7 +9,6 @@ NC='\033[0m' # No Color
 
 # 提示用户输入监听端口和Host
 read -p "请输入监听端口 (listen_port): " LISTEN_PORT
-read -p "请输入 Host: " HOST
 
 echo -e "${BLUE}生成 用户密码...${NC}"
 # 生成用户密码
@@ -31,20 +30,7 @@ cat <<EOF >/usr/local/etc/sing-box/config.json
             "type": "shadowsocks",
             "tag": "ss-in",
             "method": "2022-blake3-aes-128-gcm",
-            "password": "$PASSWORD",
-            "multiplex": {
-            "max_connections": 4,
-            "min_streams": 4,
-            "max_streams": 0,
-            "padding": true,
-            "enabled": true
-            },
-            "transport": {
-                "type": "ws",
-                "path": "/",
-                "headers": {
-                    "Host": "$HOST"
-                }
+            "password": "$PASSWORD"
             }
         }
     ],
